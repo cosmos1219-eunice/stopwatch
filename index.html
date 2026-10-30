@@ -3,22 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>스탑워치</title>
+<title>Holiday Queen Stopwatch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #fff4f1; --bg2: #eaf6ff; --panel: #ffffff; --text: #5a4740; --muted: #b19a90;
-    --line: #f3e1da; --start: #ff9fb2; --stop: #ff8a7a; --lap: #a9d8ff;
-    --best: #4fb98a; --worst: #ff7a6b; --shadow: rgba(214, 150, 140, .25);
-    --toast: #f6c98a; --toast-in: #fff1d6; --cloud: #ffffff; --cheek: #ffb3b3;
+    --bg: #ffd6e7; --bg2: #ff8fbf; --panel: #fff7fb; --text: #7a1246; --muted: #d0679a;
+    --line: #ffc2dc; --start: #ff3d8b; --stop: #e0284f; --lap: #ff9ec7;
+    --best: #1f9e6e; --worst: #e0284f; --shadow: rgba(214, 40, 110, .35);
+    --toast: #f6c98a; --toast-in: #fff1d6; --cloud: #ffffff; --cheek: #ff8fb1;
+    --hat: #e0284f; --fur: #ffffff; --fur-line: #ffc2dc;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #2a2230; --bg2: #1f2633; --panel: #342b3b; --text: #f7e9e4; --muted: #b9a3ad;
-      --line: #4a3d52; --start: #ff8fa6; --stop: #ff7a6b; --lap: #7fb8e6;
-      --best: #6fd6a6; --worst: #ff8b7e; --shadow: rgba(0,0,0,.35);
-      --toast: #e8b874; --toast-in: #fbe7c4; --cloud: #f3f1f7; --cheek: #ff9eaa;
+      --bg: #3a0d26; --bg2: #6b1240; --panel: #2b0a1d; --text: #ffe3f0; --muted: #ff9ec7;
+      --line: #7a1f4d; --start: #ff3d8b; --stop: #ff4d6d; --lap: #c2477f;
+      --best: #5fe0a8; --worst: #ff6b81; --shadow: rgba(0,0,0,.5);
+      --toast: #e8b874; --toast-in: #fbe7c4; --cloud: #fbeff5; --cheek: #ff8fb1;
+      --hat: #ff3d6b; --fur: #fff4f8; --fur-line: #7a1f4d;
     }
   }
   * { box-sizing: border-box; }
@@ -32,13 +34,13 @@
   /* 배경 점 무늬 */
   body::before {
     content: ""; position: fixed; inset: 0; pointer-events: none; opacity: .5;
-    background-image: radial-gradient(var(--line) 2px, transparent 2px);
+    background-image: radial-gradient(rgba(255,255,255,.55) 1.5px, transparent 1.5px);
     background-size: 28px 28px;
   }
   .wrap { position: relative; width: 100%; max-width: 420px; }
   .card {
     background: var(--panel); border-radius: 36px; padding: 20px 24px 28px;
-    box-shadow: 0 12px 30px var(--shadow); border: 3px solid var(--line);
+    box-shadow: 0 12px 34px var(--shadow), 0 0 0 6px rgba(255,255,255,.35); border: 3px solid var(--line);
   }
   .friends { display: flex; justify-content: center; align-items: flex-end; gap: 6px; height: 120px; }
   .friends svg { overflow: visible; }
@@ -52,6 +54,18 @@
   .zzz { font-size: 14px; fill: var(--muted); animation: zz 2s ease-in-out infinite; }
   .running .zzz, .paused .zzz { display: none; }
   @keyframes zz { 0%,100% { opacity: .3 } 50% { opacity: 1 } }
+  .title {
+    text-align: center; font-size: 22px; margin: 0 0 4px; letter-spacing: 1px;
+    background: linear-gradient(90deg, #ff3d8b, #ffb3d1, #e0284f, #ffd1e3, #ff3d8b);
+    background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: shine 4s linear infinite;
+  }
+  @keyframes shine { to { background-position: 300% 0 } }
+  #snow, #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  #fx { z-index: 10; }
+  .wrap { z-index: 1; }
+  .time { text-shadow: 0 0 18px rgba(255, 61, 139, .25); }
+  button { box-shadow: 0 5px 0 rgba(150, 20, 70, .25); }
   .bubble {
     text-align: center; color: var(--muted); font-size: 15px; min-height: 20px; margin-top: 4px;
   }
@@ -89,12 +103,14 @@
 </style>
 </head>
 <body>
+<canvas id="snow"></canvas><canvas id="fx"></canvas>
 <div class="wrap">
   <div class="card">
+    <div class="title">✦ Holiday Queen Stopwatch ✦</div>
     <div class="friends" id="friends">
       <!-- 식빵이 -->
       <svg class="bob1" width="96" height="104" viewBox="0 0 96 104" aria-label="식빵이">
-        <text class="zzz" x="78" y="14">z</text><text class="zzz" x="86" y="4">z</text>
+        <text class="zzz" x="-6" y="30">z</text><text class="zzz" x="-14" y="18">z</text>
         <path d="M14 46 C2 40 2 12 26 10 C34 2 62 2 70 10 C94 12 94 40 82 46 L82 92 Q82 100 74 100 L22 100 Q14 100 14 92 Z" fill="var(--toast)"/>
         <path d="M22 48 C14 42 14 22 30 20 C38 13 58 13 66 20 C82 22 82 42 74 48 L74 88 Q74 92 70 92 L26 92 Q22 92 22 88 Z" fill="var(--toast-in)"/>
         <g class="eye-open" fill="#5a4740"><circle cx="38" cy="56" r="4"/><circle cx="58" cy="56" r="4"/>
@@ -103,6 +119,7 @@
           <path d="M34 57 Q38 60 42 57"/><path d="M54 57 Q58 60 62 57"/></g>
         <ellipse cx="31" cy="66" rx="5" ry="3" fill="var(--cheek)"/><ellipse cx="65" cy="66" rx="5" ry="3" fill="var(--cheek)"/>
         <path d="M44 64 Q48 68 52 64" stroke="#5a4740" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <g class="hat" stroke="var(--fur-line)" stroke-width="1.5"><path d="M18 22 Q40 -18 84 8 L74 24 Z" fill="var(--hat)"/><rect x="12" y="18" width="70" height="12" rx="6" fill="var(--fur)"/><circle cx="86" cy="8" r="7" fill="var(--fur)"/></g>
       </svg>
       <!-- 구름이 -->
       <svg class="bob2" width="92" height="76" viewBox="0 0 92 76" aria-label="구름이">
@@ -113,6 +130,7 @@
           <path d="M34 53 Q38 56 42 53"/><path d="M52 53 Q56 56 60 53"/></g>
         <ellipse cx="30" cy="60" rx="4.5" ry="2.6" fill="var(--cheek)"/><ellipse cx="64" cy="60" rx="4.5" ry="2.6" fill="var(--cheek)"/>
         <path d="M44 59 Q47 62 50 59" stroke="#5a4740" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <g class="hat" stroke="var(--fur-line)" stroke-width="1.5"><path d="M40 30 Q56 -6 84 14 L76 32 Z" fill="var(--hat)"/><rect x="36" y="27" width="44" height="10" rx="5" fill="var(--fur)"/><circle cx="86" cy="14" r="6" fill="var(--fur)"/></g>
       </svg>
     </div>
     <div class="bubble" id="bubble">쿨쿨… 시작을 눌러 깨워 주세요</div>
@@ -180,7 +198,7 @@
     lapBtn.textContent = running || t === 0 ? '랩' : '초기화';
     lapBtn.disabled = !running && t === 0;
     friends.className = 'friends ' + (running ? 'running' : t > 0 ? 'paused' : '');
-    bubble.textContent = running ? '영차영차! 달리는 중' : t > 0 ? '잠깐 쉬는 중…' : '쿨쿨… 시작을 눌러 깨워 주세요';
+    bubble.textContent = running ? '반짝반짝! 달리는 중 ✨' : t > 0 ? '잠깐 쉬는 중… 🎀' : '쿨쿨… 시작을 눌러 깨워 주세요 🎄';
   }
 
   function toggle() {
@@ -206,6 +224,48 @@
     else if (e.key === 'l' || e.key === 'L') lap();
     else if (e.key === 'r' || e.key === 'R') reset();
   });
+
+  // 눈 내리기
+  const snow = document.getElementById('snow'), sc = snow.getContext('2d');
+  const fx = document.getElementById('fx'), fc = fx.getContext('2d');
+  let W, H, flakes = [], sparks = [];
+  function resize() { W = snow.width = fx.width = innerWidth; H = snow.height = fx.height = innerHeight; }
+  resize(); addEventListener('resize', resize);
+  for (let i = 0; i < 70; i++) flakes.push({ x: Math.random()*W, y: Math.random()*H, r: 1 + Math.random()*3, v: .4 + Math.random()*1.1, d: Math.random()*6 });
+  const colors = ['#ff3d8b', '#ffd1e3', '#ffffff', '#e0284f', '#ffc94d'];
+  function burst() {
+    const r = startBtn.getBoundingClientRect(), cx = r.left + r.width/2, cy = r.top + r.height/2;
+    for (let i = 0; i < 70; i++) {
+      const a = Math.random()*Math.PI*2, sp = 2 + Math.random()*6;
+      sparks.push({ x: cx, y: cy, vx: Math.cos(a)*sp, vy: Math.sin(a)*sp - 2, life: 60 + Math.random()*30,
+        c: colors[i % colors.length], s: 2 + Math.random()*4, star: Math.random() < .4 });
+    }
+  }
+  function star(c, x, y, s) {
+    c.beginPath();
+    for (let i = 0; i < 8; i++) { const rr = i % 2 ? s*.4 : s; const a = i*Math.PI/4; c.lineTo(x + Math.cos(a)*rr, y + Math.sin(a)*rr); }
+    c.closePath(); c.fill();
+  }
+  function loop(t) {
+    sc.clearRect(0, 0, W, H); sc.fillStyle = 'rgba(255,255,255,.9)';
+    for (const f of flakes) {
+      f.y += f.v; f.x += Math.sin(t/1000 + f.d) * .4;
+      if (f.y > H + 5) { f.y = -5; f.x = Math.random()*W; }
+      sc.beginPath(); sc.arc(f.x, f.y, f.r, 0, Math.PI*2); sc.fill();
+    }
+    fc.clearRect(0, 0, W, H);
+    sparks = sparks.filter(p => p.life > 0);
+    for (const p of sparks) {
+      p.x += p.vx; p.y += p.vy; p.vy += .15; p.vx *= .98; p.life--;
+      fc.globalAlpha = Math.min(1, p.life/30); fc.fillStyle = p.c;
+      p.star ? star(fc, p.x, p.y, p.s*1.6) : fc.fillRect(p.x, p.y, p.s, p.s);
+    }
+    fc.globalAlpha = 1;
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+  startBtn.addEventListener('click', () => { if (running) burst(); });
+  document.addEventListener('keydown', e => { if (e.code === 'Space' && !e.repeat && running) burst(); });
   render(); updateUI();
 </script>
 </body>
