@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>스탑워치</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fff4f1; --bg2: #eaf6ff; --panel: #ffffff; --text: #5a4740; --muted: #b19a90;
+    --line: #f3e1da; --start: #ff9fb2; --stop: #ff8a7a; --lap: #a9d8ff;
+    --best: #4fb98a; --worst: #ff7a6b; --shadow: rgba(214, 150, 140, .25);
+    --toast: #f6c98a; --toast-in: #fff1d6; --cloud: #ffffff; --cheek: #ffb3b3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #2a2230; --bg2: #1f2633; --panel: #342b3b; --text: #f7e9e4; --muted: #b9a3ad;
+      --line: #4a3d52; --start: #ff8fa6; --stop: #ff7a6b; --lap: #7fb8e6;
+      --best: #6fd6a6; --worst: #ff8b7e; --shadow: rgba(0,0,0,.35);
+      --toast: #e8b874; --toast-in: #fbe7c4; --cloud: #f3f1f7; --cheek: #ff9eaa;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%) fixed;
+    color: var(--text);
+    font-family: "Jua", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    display: flex; justify-content: center; padding: 32px 16px 48px;
+  }
+  /* 배경 점 무늬 */
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; opacity: .5;
+    background-image: radial-gradient(var(--line) 2px, transparent 2px);
+    background-size: 28px 28px;
+  }
+  .wrap { position: relative; width: 100%; max-width: 420px; }
+  .card {
+    background: var(--panel); border-radius: 36px; padding: 20px 24px 28px;
+    box-shadow: 0 12px 30px var(--shadow); border: 3px solid var(--line);
+  }
+  .friends { display: flex; justify-content: center; }
+  .photo { position: relative; width: 100%; border-radius: 24px; overflow: hidden; border: 3px solid var(--line); }
+  .photo img { display: block; width: 100%; height: auto; filter: grayscale(.85) brightness(.75); transition: filter .5s, transform .5s; }
+  .photo .zz { position: absolute; top: 10px; right: 16px; font-size: 22px; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,.4); animation: zz 2s ease-in-out infinite; }
+  @keyframes zz { 0%,100% { opacity: .4; transform: translateY(0) } 50% { opacity: 1; transform: translateY(-6px) } }
+  .running .photo img { filter: none; animation: bounce .9s ease-in-out infinite; }
+  .paused .photo img { filter: grayscale(.3) brightness(.95); }
+  .running .zz, .paused .zz { display: none; }
+  @keyframes bounce { 0%,100% { transform: scale(1) } 50% { transform: scale(1.03) } }
+  .bubble {
+    text-align: center; color: var(--muted); font-size: 15px; min-height: 20px; margin-top: 4px;
+  }
+  .time {
+    font-variant-numeric: tabular-nums;
+    font-size: clamp(52px, 15vw, 72px);
+    text-align: center; margin: 6px 0 2px; letter-spacing: 1px;
+  }
+  .time .ms { color: var(--muted); font-size: .6em; }
+  .current-lap { text-align: center; color: var(--muted); font-size: 16px; min-height: 22px; margin-bottom: 22px; }
+  .controls { display: flex; gap: 14px; }
+  button {
+    flex: 1; height: 62px; border: none; border-radius: 31px;
+    font-family: inherit; font-size: 20px; cursor: pointer; color: #fff;
+    background: var(--lap); box-shadow: 0 5px 0 rgba(0,0,0,.08);
+    transition: transform .08s, box-shadow .08s, opacity .15s;
+  }
+  button:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,.08); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.start { background: var(--start); }
+  button.stop { background: var(--stop); }
+  .laps { list-style: none; margin: 22px 0 0; padding: 0; }
+  .laps li {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px; margin-bottom: 8px; border-radius: 18px;
+    background: var(--bg); font-size: 17px; font-variant-numeric: tabular-nums;
+  }
+  .laps li > span:first-child { color: var(--muted); }
+  .laps li .total { color: var(--muted); font-size: 13px; margin-left: 10px; }
+  .laps li.best { color: var(--best); }
+  .laps li.best > span:first-child::after { content: " ★"; color: var(--best); }
+  .laps li.worst { color: var(--worst); }
+  .hint { text-align: center; color: var(--muted); font-size: 13px; margin-top: 18px; }
+  kbd { font-family: inherit; border: 2px solid var(--line); border-radius: 8px; padding: 0 6px; background: var(--panel); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="friends" id="friends">
+      <div class="photo"><img src="photo.jpg" alt="사진" onerror="this.parentNode.style.display='none'"><span class="zz">z z z</span></div>
+    </div>
+    <div class="bubble" id="bubble">쿨쿨… 시작을 눌러 깨워 주세요</div>
+
+    <div class="time" id="time">00:00<span class="ms">.00</span></div>
+    <div class="current-lap" id="currentLap"></div>
+
+    <div class="controls">
+      <button id="lapBtn" disabled>랩</button>
+      <button id="startBtn" class="start">시작</button>
+    </div>
+
+    <ul class="laps" id="laps"></ul>
+  </div>
+  <div class="hint"><kbd>Space</kbd> 시작/정지 · <kbd>L</kbd> 랩 · <kbd>R</kbd> 초기화</div>
+</div>
+
+<script>
+  const timeEl = document.getElementById('time');
+  const curLapEl = document.getElementById('currentLap');
+  const startBtn = document.getElementById('startBtn');
+  const lapBtn = document.getElementById('lapBtn');
+  const lapsEl = document.getElementById('laps');
+  const friends = document.getElementById('friends');
+  const bubble = document.getElementById('bubble');
+
+  let running = false, startTime = 0, elapsed = 0, laps = [], lapStartTotal = 0, raf = null;
+  const total = () => running ? elapsed + (performance.now() - startTime) : elapsed;
+
+  function fmt(ms, html = false) {
+    const cs = Math.floor(ms / 10) % 100, s = Math.floor(ms / 1000) % 60;
+    const m = Math.floor(ms / 60000) % 60, h = Math.floor(ms / 3600000);
+    const p = n => String(n).padStart(2, '0');
+    const main = (h ? h + ':' : '') + p(m) + ':' + p(s);
+    return html ? `${main}<span class="ms">.${p(cs)}</span>` : `${main}.${p(cs)}`;
+  }
+
+  function render() {
+    const t = total();
+    timeEl.innerHTML = fmt(t, true);
+    curLapEl.textContent = (laps.length || running) && t > 0 ? `랩 ${laps.length + 1} · ${fmt(t - lapStartTotal)}` : '';
+    document.title = t > 0 ? `${fmt(t)} · 스탑워치` : '스탑워치';
+  }
+  function tick() { render(); raf = requestAnimationFrame(tick); }
+
+  function renderLaps() {
+    lapsEl.innerHTML = '';
+    let best = -1, worst = -1;
+    if (laps.length >= 2) { best = laps.indexOf(Math.min(...laps)); worst = laps.indexOf(Math.max(...laps)); }
+    let acc = 0;
+    laps.map((d, i) => {
+      acc += d;
+      const li = document.createElement('li');
+      if (i === best) li.className = 'best';
+      if (i === worst) li.className = 'worst';
+      li.innerHTML = `<span>랩 ${i + 1}</span><span>${fmt(d)}<span class="total">${fmt(acc)}</span></span>`;
+      return li;
+    }).reverse().forEach(li => lapsEl.appendChild(li));
+  }
+
+  function updateUI() {
+    const t = total();
+    startBtn.textContent = running ? '정지' : (t > 0 ? '계속' : '시작');
+    startBtn.className = running ? 'stop' : 'start';
+    lapBtn.textContent = running || t === 0 ? '랩' : '초기화';
+    lapBtn.disabled = !running && t === 0;
+    friends.className = 'friends ' + (running ? 'running' : t > 0 ? 'paused' : '');
+    bubble.textContent = running ? '영차영차! 달리는 중' : t > 0 ? '잠깐 쉬는 중…' : '쿨쿨… 시작을 눌러 깨워 주세요';
+  }
+
+  function toggle() {
+    if (running) { elapsed += performance.now() - startTime; running = false; cancelAnimationFrame(raf); render(); }
+    else { startTime = performance.now(); running = true; tick(); }
+    updateUI();
+  }
+  function lap() {
+    if (!running) return;
+    const t = total(); laps.push(t - lapStartTotal); lapStartTotal = t; renderLaps();
+    bubble.textContent = `랩 ${laps.length} 기록 완료!`;
+  }
+  function reset() {
+    if (running) return;
+    elapsed = 0; laps = []; lapStartTotal = 0; renderLaps(); render(); updateUI();
+  }
+
+  startBtn.addEventListener('click', toggle);
+  lapBtn.addEventListener('click', () => running ? lap() : reset());
+  document.addEventListener('keydown', e => {
+    if (e.repeat) return;
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    else if (e.key === 'l' || e.key === 'L') lap();
+    else if (e.key === 'r' || e.key === 'R') reset();
+  });
+  render(); updateUI();
+</script>
+</body>
+</html>
